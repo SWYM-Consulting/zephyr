@@ -1,8 +1,20 @@
-/*
- * Copyright (c) 2020 TDK Invensense
+/******************************************************************************
  *
- * SPDX-License-Identifier: Apache-2.0
- */
+ * @file            nrf52840dk_nrf52840.overlay
+ *
+ * @brief           Overlay for ZOE-M8Q sample
+ *
+ * @details         
+ * 
+ * @author(s)       Marshall Wingerson
+ *
+ * @created         05/31/2021   (MM/DD/YYYY)
+ *
+ * @copyright       © 2020 SWYM, LLC. All Rights Reserved.
+ *
+ *****************************************************************************/
+
+# FIXME - Should't need SPI configuration
 
 &spi0 {
 	compatible = "nordic,nrf-spi";
@@ -11,11 +23,11 @@
 	mosi-pin = <26>;
 	miso-pin = <23>;
 	cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
-	icm42605@0 {
-		compatible = "invensense,icm42605";
+	zoe_m8q@0 {
+		compatible = "u_blox,zoe-m8q";
 		spi-max-frequency = <24000000>;
 		reg = <0>;
-		label = "ICM42605";
+		label = "ZOE-M8Q";
 		int-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
 	};
 };

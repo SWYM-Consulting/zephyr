@@ -21,7 +21,7 @@ compatible: "u-blox,zoe-m8q"
 
 include: spi-device.yaml
 
-#FIX THE REST OF THE PROPERTIES!!!
+#FIXME - THE REST OF THE PROPERTIES!!!
 
 properties:
     int-gpios:
