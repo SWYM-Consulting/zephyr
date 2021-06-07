@@ -6,7 +6,7 @@
 
 zephyr_library()
 
-if (CONFIG_ZOE_M8Q)
+if (CONFIG_ZOEM8Q)
   zephyr_library_sources(zoe_m8q.c)
 #  zephyr_library_sources(icm42605_setup.c)
 #  zephyr_library_sources_ifdef(CONFIG_SPI icm42605_spi.c)

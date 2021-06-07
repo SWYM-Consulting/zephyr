@@ -1,57 +1,27 @@
-# ZOE-M8Q GPS device configuration options
+#/******************************************************************************
+# *
+# * @file            Kconfig
+# *
+# * @brief           Kconfig ZOE-M8Q GPS device configuration options
+# *
+# * @details         Using Zephyr icm42605 Kconfig as a template
+# * 
+# * @author(s)       Marshall Wingerson
+# *
+# * @created         05/31/2021   (MM/DD/YYYY)
+# *
+# * @copyright       © 2020 SWYM, LLC. All Rights Reserved.
+# *
+# *****************************************************************************/
+
 
 # FIXME - change to ZOE-M8Q settings
 
 
 
-# Copyright (c) 2020 TDK Invensense
-# SPDX-License-Identifier: Apache-2.0
+menuconfig ZOEM8Q
+	bool "U-Blox ZOE-M8Q 72-channel GNSS Reciever"
+	depends on SPI
+	help
+	  Enable driver for U-Blox ZOE-M8Q 72-channel GNSS Reciever.
 
-#menuconfig ICM42605
-#	bool "ICM42605 Six-Axis Motion Tracking Device"
-#	depends on SPI
-#	help
-#	  Enable driver for ICM42605 SPI-based six-axis motion tracking device.
-
-#if ICM42605
-
-#choice
-#	prompt "Trigger mode"
-#	default ICM42605_TRIGGER_GLOBAL_THREAD
-#	help
-#	  Specify the type of triggering to be used by the driver.
-
-#config ICM42605_TRIGGER_NONE
-#	bool "No trigger"
-
-#config ICM42605_TRIGGER_GLOBAL_THREAD
-#	bool "Use global thread"
-#	depends on GPIO
-#	select ICM42605_TRIGGER
-
-#config ICM42605_TRIGGER_OWN_THREAD
-#	bool "Use own thread"
-#	depends on GPIO
-#	select ICM42605_TRIGGER
-
-
-#endchoice
-
-#config ICM42605_TRIGGER
-#	bool
-
-#config ICM42605_THREAD_PRIORITY
-#	int "Thread priority"
-#	depends on ICM42605_TRIGGER_OWN_THREAD
-#	default 10
-#	help
-#	  Priority of thread used by the driver to handle interrupts.
-
-#config ICM42605_THREAD_STACK_SIZE
-#	int "Thread stack size"
-#	depends on ICM42605_TRIGGER_OWN_THREAD
-#	default 1024
-#	help
-#	  Stack size of thread used by the driver to handle interrupts.
-
-#endif # ICM42605

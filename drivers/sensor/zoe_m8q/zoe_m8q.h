@@ -19,6 +19,8 @@
 
 
 
+// static int zoe_m8q_sample_fetch(const struct device *dev,
+// 				 enum sensor_channel chan);
 
 
 #endif  // ZOE_M8Q_h_

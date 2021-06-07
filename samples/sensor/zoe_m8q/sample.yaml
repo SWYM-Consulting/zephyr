@@ -5,9 +5,10 @@
 #
 
 sample:
-  name: ICM42605 Sensor Sample
+  name: ZOEM8Q Sensor Sample
 tests:
-  sample.sensor.icm42605:
+  sample.sensor.zoem8q:
     build_only: true
-    platform_allow: nrf52dk_nrf52832
+    # platform_allow: nrf52dk_nrf52832
+    platform_allow: nrf52840dk_nrf52840
     tags: sensors

@@ -4,7 +4,7 @@
  *
  * @brief           Overlay for ZOE-M8Q sample
  *
- * @details         
+ * @details         Templating off of icm42605 
  * 
  * @author(s)       Marshall Wingerson
  *
@@ -14,8 +14,7 @@
  *
  *****************************************************************************/
 
-# FIXME - Should't need SPI configuration
-
+/* FIXME - Should't need SPI configuration */
 
 &spi0 {
 	compatible = "nordic,nrf-spi";
@@ -24,11 +23,11 @@
 	mosi-pin = <26>;
 	miso-pin = <23>;
 	cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
-	icm42605@0 {
-		compatible = "invensense,icm42605";
+	zoe_m8q@0 {
+		compatible = "u-blox,zoe-m8q";
 		spi-max-frequency = <24000000>;
 		reg = <0>;
-		label = "ICM42605";
+		label = "ZOE_M8Q";
 		int-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
 	};
 };
