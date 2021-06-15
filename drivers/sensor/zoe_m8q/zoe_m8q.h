@@ -17,17 +17,18 @@
 #ifndef ZOE_M8Q_h_
 #define ZOE_M8Q_h_
 
+#include <drivers/gpio.h>
+#include <drivers/spi.h>
 
 
 struct zoe_m8q_config {
 	char *spi_name;
 	uint32_t spi_max_frequency;
 	uint16_t spi_slave;
-// #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-// 	const char *gpio_cs_port;
-// 	gpio_pin_t cs_gpio;
-// 	gpio_dt_flags_t cs_flags;
-// #endif
+	const char *gpio_cs_port;
+	gpio_pin_t cs_gpio;
+	gpio_dt_flags_t cs_flags;
+    
 // #if defined(CONFIG_ADXL362_TRIGGER)
 // 	const char *gpio_port;
 // 	gpio_pin_t int_gpio;
@@ -40,9 +41,9 @@ struct zoe_m8q_config {
 struct zoe_m8q_data {
 	const struct device *spi;
 	struct spi_config spi_cfg;
-// #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-// 	struct spi_cs_control adxl362_cs_ctrl;
-// #endif
+    
+	struct spi_cs_control zoe_m8q_cs_ctrl;
+
 	// int16_t acc_x;
 	// int16_t acc_y;
 	// int16_t acc_z;

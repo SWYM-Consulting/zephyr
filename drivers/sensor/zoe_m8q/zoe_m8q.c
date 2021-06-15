@@ -26,22 +26,59 @@
 
 #define DT_DRV_COMPAT u_blox_zoe_m8q
 
-// LOG_MODULE_REGISTER(ZOE-M8Q, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(ZOE_M8Q, CONFIG_SENSOR_LOG_LEVEL);
 
 static struct zoe_m8q_data zoe_m8q_data;
 
+
+/**
+ * @brief
+ * 
+ * @return
+ * 
+ */
 int zoe_m8q_init(const struct device *dev)
 {
 	printk("ZOE_M8Q: init!!!!\n");
+
+    const struct zoe_m8q_config *config = dev->config;
+    struct zoe_m8q_data *data = dev->data;
+
+    data->spi = device_get_binding(config->spi_name);
+    if (NULL == data->spi) {
+        printk("[zoe-m8q] Error Could not find SPI device\n: %s", config->spi_name);
+        LOG_ERR("Error Could not find SPI device: %s", config->spi_name);
+        return -EINVAL;
+    }
+
+    data->spi_cfg.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
+			SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE |
+			SPI_TRANSFER_MSB);
+    data->spi_cfg.frequency = config->spi_max_frequency;
+    data->spi_cfg.slave = config->spi_slave;
+
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+    data->zoe_m8q_cs_ctrl.gpio_dev = device_get_binding(config->gpio_cs_port);
+    if(NULL == data->zoe_m8q_cs_ctrl.gpio_dev) {
+        printk("[zoe-m8q] Error Could not find CS GPIO: %s\n", config->gpio_cs_port);
+        LOG_ERR("Error Could not find CS GPIO: %s", config->gpio_cs_port);
+        return -ENODEV;
+    }
+
+    data->zoe_m8q_cs_ctrl.gpio_pin = config->cs_gpio;
+    data->zoe_m8q_cs_ctrl.gpio_dt_flags = config->cs_flags;
+    data->zoe_m8q_cs_ctrl.delay = 0U;
+
+    data->spi_cfg.cs = &data->zoe_m8q_cs_ctrl;
+#endif
+
+    //CHIP RESET if needed
+
+    //GET chip PARTID
+
+    //Finish INIT
 	return 0;
 }
-
-static int zoe_m8q_chip_init(const struct device *dev)
-{
-	printk("ZOE_M8Q: chip init!!!!\n");
-	return 0;
-}
-
 
 
 
@@ -74,92 +111,62 @@ static int zoe_m8q_attr_set(const struct device *dev,
 }
 
 
+#define BUFF_LEN 20
+
 static int zoe_m8q_sample_fetch(const struct device *dev,
-				 enum sensor_channel chan)
+                                enum sensor_channel chan)
 {
+    printk("In FETCH!!!!\n");
 
-    printk("IN SAMPLE FETCH!!!!\n");
-    
-	// int result = 0;
-	// uint16_t fifo_count = 0;
-	// struct icm42605_data *drv_data = dev->data;
+    struct zoe_m8q_data *data = dev->data;
+    int return_value = 0;
 
-	// /* Read INT_STATUS (0x45) and FIFO_COUNTH(0x46), FIFO_COUNTL(0x47) */
-	// result = inv_spi_read(REG_INT_STATUS, drv_data->fifo_data, 3);
+    uint8_t rx_buff[BUFF_LEN];
+    uint8_t string_buff[BUFF_LEN];
 
-	// if (drv_data->fifo_data[0] & BIT_INT_STATUS_DRDY) {
-	// 	fifo_count = (drv_data->fifo_data[1] << 8)
-	// 		+ (drv_data->fifo_data[2]);
-	// 	result = inv_spi_read(REG_FIFO_DATA, drv_data->fifo_data,
-	// 			      fifo_count);
+    const struct spi_buf rx_buf_struct = {
+        .buf = rx_buff,
+        .len = BUFF_LEN
+    };
 
-	// 	/* FIFO Data structure
-	// 	 * Packet 1 : FIFO Header(1), AccelX(2), AccelY(2),
-	// 	 *            AccelZ(2), Temperature(1)
-	// 	 * Packet 2 : FIFO Header(1), GyroX(2), GyroY(2),
-	// 	 *            GyroZ(2), Temperature(1)
-	// 	 * Packet 3 : FIFO Header(1), AccelX(2), AccelY(2), AccelZ(2),
-	// 	 *            GyroX(2), GyroY(2), GyroZ(2), Temperature(1)
-	// 	 */
-	// 	if (drv_data->fifo_data[0] & BIT_FIFO_HEAD_ACCEL) {
-	// 		/* Check empty values */
-	// 		if (!(drv_data->fifo_data[1] == FIFO_ACCEL0_RESET_VALUE
-	// 		      && drv_data->fifo_data[2] ==
-	// 		      FIFO_ACCEL1_RESET_VALUE)) {
-	// 			drv_data->accel_x =
-	// 				(drv_data->fifo_data[1] << 8)
-	// 				+ (drv_data->fifo_data[2]);
-	// 			drv_data->accel_y =
-	// 				(drv_data->fifo_data[3] << 8)
-	// 				+ (drv_data->fifo_data[4]);
-	// 			drv_data->accel_z =
-	// 				(drv_data->fifo_data[5] << 8)
-	// 				+ (drv_data->fifo_data[6]);
-	// 		}
-	// 		if (!(drv_data->fifo_data[0] & BIT_FIFO_HEAD_GYRO)) {
-	// 			drv_data->temp =
-	// 				(int16_t)(drv_data->fifo_data[7]);
-	// 		} else {
-	// 			if (!(drv_data->fifo_data[7] ==
-	// 			      FIFO_GYRO0_RESET_VALUE &&
-	// 			      drv_data->fifo_data[8] ==
-	// 			      FIFO_GYRO1_RESET_VALUE)) {
-	// 				drv_data->gyro_x =
-	// 					(drv_data->fifo_data[7] << 8)
-	// 					+ (drv_data->fifo_data[8]);
-	// 				drv_data->gyro_y =
-	// 					(drv_data->fifo_data[9] << 8)
-	// 					+ (drv_data->fifo_data[10]);
-	// 				drv_data->gyro_z =
-	// 					(drv_data->fifo_data[11] << 8)
-	// 					+ (drv_data->fifo_data[12]);
-	// 			}
-	// 			drv_data->temp =
-	// 				(int16_t)(drv_data->fifo_data[13]);
-	// 		}
-	// 	} else {
-	// 		if (drv_data->fifo_data[0] & BIT_FIFO_HEAD_GYRO) {
-	// 			if (!(drv_data->fifo_data[1] ==
-	// 			      FIFO_GYRO0_RESET_VALUE &&
-	// 			      drv_data->fifo_data[2] ==
-	// 			      FIFO_GYRO1_RESET_VALUE)) {
-	// 				drv_data->gyro_x =
-	// 					(drv_data->fifo_data[1] << 8)
-	// 					+ (drv_data->fifo_data[2]);
-	// 				drv_data->gyro_y =
-	// 					(drv_data->fifo_data[3] << 8)
-	// 					+ (drv_data->fifo_data[4]);
-	// 				drv_data->gyro_z =
-	// 					(drv_data->fifo_data[5] << 8)
-	// 					+ (drv_data->fifo_data[6]);
-	// 			}
-	// 			drv_data->temp =
-	// 				(int16_t)(drv_data->fifo_data[7]);
-	// 		}
-	// 	}
-	// }
+    const struct spi_buf_set rx = {
+        .buffers = &rx_buf_struct,
+        .count = 1
+    };
 
-	return 0;
+    return_value = spi_transceive(data->spi, &data->spi_cfg, NULL, &rx);
+
+    printk("RX BUFFER: ");
+    for(int i=0; i<BUFF_LEN; i++) {
+        printk("%c:", rx_buff[i]);
+    }
+    printk("\n\n");
+
+    if (return_value) {
+        printk("SPI FETCH ERROR!!!: 0x%02x\n", return_value);
+        return return_value;
+    }
+
+    uint8_t* buff_ptr = strchr(rx_buff, '?');
+
+    uint8_t* str_ptr = string_buff;
+
+    // while(*buff_ptr != '\n') {
+    //     *str_ptr = *buff_ptr;
+    //     str_ptr++;
+    //     buff_ptr++;
+    // }
+    // str_ptr = 0;
+
+    // printk("string_ptr: %s\n", string_buff);
+
+    // data->acc_x = sys_le16_to_cpu(buf[0]);
+    // data->acc_y = sys_le16_to_cpu(buf[1]);
+    // data->acc_z = sys_le16_to_cpu(buf[2]);
+    // data->temp = sys_le16_to_cpu(buf[3]);
+
+
+    return return_value;
 }
 
 
@@ -190,6 +197,10 @@ static int zoe_m8q_channel_get(const struct device *dev,
 	return 0;
 }
 
+
+#define ZOE_M8Q_HAS_CS(inst) DT_INST_SPI_DEV_HAS_CS_GPIOS(inst)
+
+
 static const struct sensor_driver_api zoe_m8q_api_funcs = {
 	.attr_set     = zoe_m8q_attr_set,
 	.sample_fetch = zoe_m8q_sample_fetch,
@@ -202,12 +213,12 @@ static const struct sensor_driver_api zoe_m8q_api_funcs = {
 static const struct zoe_m8q_config zoe_m8q_config = {
 	.spi_name = DT_INST_BUS_LABEL(0),
 	.spi_slave = DT_INST_REG_ADDR(0),
-// 	.spi_max_frequency = DT_INST_PROP(0, spi_max_frequency),
-// #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-// 	.gpio_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-// 	.cs_gpio = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-// 	.cs_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
-// #endif
+	.spi_max_frequency = DT_INST_PROP(0, spi_max_frequency),
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	.gpio_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+	.cs_gpio = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
+	.cs_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
+#endif
 // #if defined(CONFIG_ADXL362_TRIGGER)
 // 	.gpio_port = DT_INST_GPIO_LABEL(0, int1_gpios),
 // 	.int_gpio = DT_INST_GPIO_PIN(0, int1_gpios),
