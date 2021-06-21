@@ -27,7 +27,8 @@ include: spi-device.yaml
 properties:
     int-gpios:
       type: phandle-array
-      required: true
+      # required: true
+      required: false
       description: |
         The INT signal default configuration is active-high.  The
         property value should ensure the flags properly describe the

@@ -24,12 +24,20 @@
 
 #include "zoe_m8q.h"
 
+
+#include <string.h>
+
 #define DT_DRV_COMPAT u_blox_zoe_m8q
 
 LOG_MODULE_REGISTER(ZOE_M8Q, CONFIG_SENSOR_LOG_LEVEL);
 
 static struct zoe_m8q_data zoe_m8q_data;
 
+#define BUFF_LEN 200
+
+//Required globals to preserved buffer status 
+uint8_t rx_buff[BUFF_LEN];
+uint32_t buffer_used_it = 0;
 
 /**
  * @brief
@@ -50,10 +58,10 @@ int zoe_m8q_init(const struct device *dev)
         LOG_ERR("Error Could not find SPI device: %s", config->spi_name);
         return -EINVAL;
     }
-
+    
     data->spi_cfg.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-			SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE |
-			SPI_TRANSFER_MSB);
+            SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE |
+            SPI_TRANSFER_MSB);
     data->spi_cfg.frequency = config->spi_max_frequency;
     data->spi_cfg.slave = config->spi_slave;
 
@@ -111,22 +119,87 @@ static int zoe_m8q_attr_set(const struct device *dev,
 }
 
 
-#define BUFF_LEN 20
+static int zoe_m8q_process_nmea_string(const uint8_t* buffer) {
+
+    printk("Processing string: %s\n", buffer);
+
+    char temp_buffer[BUFF_LEN];
+    // const char s[2] = ",";
+    char *state;
+    strcpy(temp_buffer, buffer);
+
+    char *str_ptr = strtok_r(temp_buffer, ",*", &state);
+
+    while(str_ptr != NULL) {
+        printk("str_ptr: %s\n", str_ptr);
+        str_ptr = strtok_r((char *)NULL, ",*", &state);
+    }
+
+    return 0;
+}
+
+static int zoe_m8q_process_rx_buffer() {
+
+    //Find beginning of NMEA string
+    uint8_t* nmea_begin_ptr = strchr(rx_buff, '$');
+    
+    if(nmea_begin_ptr == NULL) {
+        printk("ERROR: Buffer does not contain a NMEA string\n");
+        return -1;
+    }
+
+    while (true) {
+
+        uint8_t temp_buff[BUFF_LEN]; 
+
+        //Find the beginning of the next NMEA string
+        uint8_t* nmea_end_ptr = strchr(nmea_begin_ptr+1, '$');
+
+        uint32_t sentence_length = nmea_end_ptr-nmea_begin_ptr;
+
+        if (nmea_end_ptr == NULL) {
+        // if (nmea_end_ptr == &(rx_buff[BUFF_LEN])) {
+            printk("NULL strchr\n");
+
+            int left_in_buffer = (&(rx_buff[BUFF_LEN]) - nmea_begin_ptr);
+
+            strncpy(rx_buff, nmea_begin_ptr, left_in_buffer);
+
+            //Clean buffer
+            for (int i=left_in_buffer; i<BUFF_LEN; i++) {
+                rx_buff[i] = 0;
+            }
+
+            buffer_used_it = left_in_buffer;
+            
+            return 0;
+        }
+
+        //Copy NMEA string to temp_buffer
+        strncpy(temp_buff, nmea_begin_ptr, sentence_length);
+        temp_buff[sentence_length] = 0;
+
+        zoe_m8q_process_nmea_string(temp_buff);
+
+        nmea_begin_ptr = nmea_end_ptr;
+    }
+
+    return 0;
+
+}
 
 static int zoe_m8q_sample_fetch(const struct device *dev,
                                 enum sensor_channel chan)
 {
-    printk("In FETCH!!!!\n");
+    printk("\nIn FETCH!!!!\n");
 
     struct zoe_m8q_data *data = dev->data;
     int return_value = 0;
 
-    uint8_t rx_buff[BUFF_LEN];
-    uint8_t string_buff[BUFF_LEN];
-
+    //Setup buffers
     const struct spi_buf rx_buf_struct = {
-        .buf = rx_buff,
-        .len = BUFF_LEN
+        .buf = &rx_buff[buffer_used_it],
+        .len = (BUFF_LEN - buffer_used_it)
     };
 
     const struct spi_buf_set rx = {
@@ -134,37 +207,15 @@ static int zoe_m8q_sample_fetch(const struct device *dev,
         .count = 1
     };
 
+    //Read buffer
     return_value = spi_transceive(data->spi, &data->spi_cfg, NULL, &rx);
 
-    printk("RX BUFFER: ");
-    for(int i=0; i<BUFF_LEN; i++) {
-        printk("%c:", rx_buff[i]);
-    }
-    printk("\n\n");
-
-    if (return_value) {
+    if (return_value != 0) {
         printk("SPI FETCH ERROR!!!: 0x%02x\n", return_value);
         return return_value;
     }
 
-    uint8_t* buff_ptr = strchr(rx_buff, '?');
-
-    uint8_t* str_ptr = string_buff;
-
-    // while(*buff_ptr != '\n') {
-    //     *str_ptr = *buff_ptr;
-    //     str_ptr++;
-    //     buff_ptr++;
-    // }
-    // str_ptr = 0;
-
-    // printk("string_ptr: %s\n", string_buff);
-
-    // data->acc_x = sys_le16_to_cpu(buf[0]);
-    // data->acc_y = sys_le16_to_cpu(buf[1]);
-    // data->acc_z = sys_le16_to_cpu(buf[2]);
-    // data->temp = sys_le16_to_cpu(buf[3]);
-
+    return_value = zoe_m8q_process_rx_buffer();
 
     return return_value;
 }
