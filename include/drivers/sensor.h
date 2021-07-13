@@ -90,6 +90,8 @@ enum sensor_channel {
 	SENSOR_CHAN_HUMIDITY,
 	/** Illuminance in visible spectrum, in lux. */
 	SENSOR_CHAN_LIGHT,
+
+	SENSOR_CHAN_LIGHT_LEVEL,
 	/** Illuminance in infra-red spectrum, in lux. */
 	SENSOR_CHAN_IR,
 	/** Illuminance in red spectrum, in lux. */
