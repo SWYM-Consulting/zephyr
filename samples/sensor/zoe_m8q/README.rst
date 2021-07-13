@@ -1,18 +1,43 @@
-.. _icm42605:
+.. ZOE-M8Q:
 
-MPU6050: Invensense Motion Tracking Device
+U-Blox ZOE-M8Q: GPS 
 ##########################################
+
 
 Description
 ***********
+Sample application reads basic GPS data from device and prints to
+to the console
 
-This sample application periodically (10 Hz) measures the sensor
-temperature, acceleration, and angular velocity, tap, double tap
-displaying the values on the console along with a timestamp since
-startup.
+
+
+
+Supported channels
+
+	// GPS channel numbers
+	SENSOR_CHAN_GPS_DATA_VALID,
+	SENSOR_CHAN_GPS_MODE,
+	SENSOR_CHAN_GPS_TIME,
+	SENSOR_CHAN_GPS_LATITUDE,
+	SENSOR_CHAN_GPS_LONGITUDE,
+	SENSOR_CHAN_GPS_ALTITUDE,
+	SENSOR_CHAN_GPS_GROUNDSPEED,
+	SENSOR_CHAN_GPS_TRUE_COURSE,
+
+Supported NMEA strings
+GPGGA/GNGGA - Global Positioning System Fix Data
+
+GPRMC/GNRMC - Recommended minimum specific GPS/Transit data
+
+
 
 Wiring
 *******
+
+
+
+
+
 
 This sample uses an external breakout for the sensor.  A devicetree
 overlay must be provided to identify the SPI bus and GPIO used to

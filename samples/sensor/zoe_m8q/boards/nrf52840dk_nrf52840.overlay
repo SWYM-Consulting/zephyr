@@ -10,7 +10,7 @@
  *
  * @created         05/31/2021   (MM/DD/YYYY)
  *
- * @copyright       © 2020 SWYM, LLC. All Rights Reserved.
+ * @copyright       © 2021 SWYM, LLC. All Rights Reserved.
  *
  *****************************************************************************/
 
@@ -24,13 +24,14 @@
 	miso-pin = <40>;
 	cs-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 
-
 	zoe-m8q@0 {
 		compatible = "u-blox,zoe-m8q";
 		spi-max-frequency = <24000000>;
 		reg = <0>;
 		label = "ZOE_M8Q";
+
 		/* int-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>; */
+		reset-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>; 
 	};
 };
 

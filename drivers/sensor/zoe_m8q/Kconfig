@@ -10,14 +10,7 @@
 # *
 # * @created         05/31/2021   (MM/DD/YYYY)
 # *
-# * @copyright       © 2020 SWYM, LLC. All Rights Reserved.
-# *
 # *****************************************************************************/
-
-
-# FIXME - change to ZOE-M8Q settings
-
-
 
 menuconfig ZOEM8Q
 	bool "U-Blox ZOE-M8Q 72-channel GNSS Reciever"

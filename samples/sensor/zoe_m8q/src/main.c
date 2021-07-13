@@ -19,68 +19,53 @@
 #include <drivers/sensor.h>
 #include <stdio.h>
 
+struct sensor_value data_valid, mode, time, latitude, longitude,
+                    altitude, groundspeed, true_course;
+
+
+void print_gps_data() 
+{
+    printk("GPS data - Zephyr doesn't support printing floats :/\n");
+    printk("Data Valid:\t%c\n", data_valid.val1);
+    printk("GPS mode:\t%c\n", mode.val1);
+    printk("GPS Time:\t%d\tHH:MM:SS\n", time.val1);
+    printk("Latitude:\t%d.%d DD:MM.MMMM\n", latitude.val1, latitude.val2);
+    printk("Longitude:\t%d.%d DDD:MM.MMMM\n", longitude.val1, longitude.val2);
+    printk("Altitude:\t%d xxxx => xxx.x m\n", altitude.val1);
+    printk("Groundspeed:\t%d xxxxxx => xxx.xxx knots\n", groundspeed.val1);
+    printk("True Course:\t%d\n", true_course.val1);
+    printk("\n");
+}
+
 void main(void)
 {
-	// const char *const label = DT_LABEL(DT_INST(0, invensense_icm42605));
-	// const struct device *icm42605 = device_get_binding(label);
 
-	// if (!icm42605) {
-	// 	printf("Failed to find sensor %s\n", label);
-	// 	return;
-	// }
-	
-	const char *const label = DT_LABEL(DT_INST(0, u_blox_zoe_m8q));
+    const char *const label = DT_LABEL(DT_INST(0, u_blox_zoe_m8q));
+    const struct device *gps = device_get_binding(label);
 
-	printk("label: %s\n", label);
+    if (!gps) {
+        printf("Failed to find sensor %s\n", label);
+        return;
+    }
 
-	const struct device *gps = device_get_binding(label);
+    while(1) {
+        //Poll sensor to get a new set of NMEA strings
+        printk("Fetching data from GPS\n");
+        sensor_sample_fetch(gps);
 
-	if (!gps) {
-		printf("Failed to find sensor %s\n", label);
-		return;
+        printk("Getting sensor channel\n");
+        sensor_channel_get(gps, SENSOR_CHAN_GPS_DATA_VALID, &data_valid);
+        sensor_channel_get(gps, SENSOR_CHAN_GPS_MODE, &mode);
+        sensor_channel_get(gps, SENSOR_CHAN_GPS_TIME, &time);
+        sensor_channel_get(gps, SENSOR_CHAN_GPS_LATITUDE, &latitude);
+        sensor_channel_get(gps, SENSOR_CHAN_GPS_LONGITUDE, &longitude);
+        sensor_channel_get(gps, SENSOR_CHAN_GPS_ALTITUDE, &altitude);
+        sensor_channel_get(gps, SENSOR_CHAN_GPS_GROUNDSPEED, &groundspeed);
+        sensor_channel_get(gps, SENSOR_CHAN_GPS_TRUE_COURSE, &true_course);
+
+        print_gps_data();
+
+		k_sleep(K_MSEC(1000));
 	}
 
-	while(1) {
-
-		sensor_sample_fetch(gps);
-		// zoe_m8q_do_something();
-
-		k_sleep(K_MSEC(300));
-	}
-
-	// tap_trigger = (struct sensor_trigger) {
-	// 	.type = SENSOR_TRIG_TAP,
-	// 	.chan = SENSOR_CHAN_ALL,
-	// };
-
-
-	// if (sensor_trigger_set(icm42605, &tap_trigger,
-	// 		       handle_icm42605_tap) < 0) {
-	// 	printf("Cannot configure tap trigger!!!\n");
-	// 	return;
-	// }
-
-	// double_tap_trigger = (struct sensor_trigger) {
-	// 	.type = SENSOR_TRIG_DOUBLE_TAP,
-	// 	.chan = SENSOR_CHAN_ALL,
-	// };
-
-	// if (sensor_trigger_set(icm42605, &double_tap_trigger,
-	// 		       handle_icm42605_double_tap) < 0) {
-	// 	printf("Cannot configure double tap trigger!!!\n");
-	// 	return;
-	// }
-
-	// data_trigger = (struct sensor_trigger) {
-	// 	.type = SENSOR_TRIG_DATA_READY,
-	// 	.chan = SENSOR_CHAN_ALL,
-	// };
-
-	// if (sensor_trigger_set(icm42605, &data_trigger,
-	// 		       handle_icm42605_drdy) < 0) {
-	// 	printf("Cannot configure data trigger!!!\n");
-	// 	return;
-	// }
-
-	printf("Configured for triggered sampling.\n");
 }

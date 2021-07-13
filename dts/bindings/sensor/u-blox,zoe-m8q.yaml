@@ -10,26 +10,30 @@
 # *
 # * @created         05/31/2021   (MM/DD/YYYY)
 # *
-# * @copyright       © 2020 SWYM, LLC. All Rights Reserved.
-# *
 # *****************************************************************************/
 
 description: U-Blox ZOE-M8Q GPS
-
-# U-Blox ZOE-M8Q is SPI. 
 
 compatible: "u-blox,zoe-m8q"
 
 include: spi-device.yaml
 
-# FIXME - THE REST OF THE PROPERTIES!!! 
-
 properties:
     int-gpios:
       type: phandle-array
-      # required: true
       required: false
       description: |
-        The INT signal default configuration is active-high.  The
-        property value should ensure the flags properly describe the
-        signal that is presented to the driver.
+        UNUSED - External interrupt pin for low-power mode. Active LOW. Not enabled by default
+
+    time-pulse-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        UNUSED - Pulse per second pin. Active LOW. Not enabled by default
+
+    reset-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        UNUSED - Reset pin. Active LOW. 
+
