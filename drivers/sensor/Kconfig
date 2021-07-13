@@ -38,6 +38,7 @@ config SENSOR_SHELL_BATTERY
 
 comment "Device Drivers"
 
+
 source "drivers/sensor/adt7420/Kconfig"
 
 source "drivers/sensor/adxl345/Kconfig"
@@ -61,6 +62,8 @@ source "drivers/sensor/bmc150_magn/Kconfig"
 source "drivers/sensor/bme280/Kconfig"
 
 source "drivers/sensor/bme680/Kconfig"
+
+source "drivers/sensor/bme688/Kconfig"
 
 source "drivers/sensor/bmg160/Kconfig"
 
@@ -187,6 +190,8 @@ source "drivers/sensor/si7060/Kconfig"
 source "drivers/sensor/sm351lt/Kconfig"
 
 source "drivers/sensor/stm32_temp/Kconfig"
+
+source "drivers/sensor/sprlight/Kconfig"
 
 source "drivers/sensor/stts751/Kconfig"
 

@@ -1,0 +1,5 @@
+config SPRLIGHT_SENSOR
+	bool "SWYM Photoresistive Light Sensor"
+	depends on ADC
+	help
+	  Enable driver for SWYM light sensor.
