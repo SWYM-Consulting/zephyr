@@ -115,6 +115,8 @@ static int zoe_m8q_process_nmea_string(uint8_t* buffer)
     // printk("In process_nmea_String():\n[%s]\n\n", buffer);
     char sentence_id_buff[SENT_ID_LENGTH] = {0};
 
+    // printk("process_nmea_string:\n[%s]\n\n", buffer);
+
     //Confirm checksum
     if (false == nmea_is_valid(buffer)) {
         printk("[ZOE_M8Q] NMEA string failed checksum!\n");
@@ -159,60 +161,64 @@ bool zoe_z8q_continue_parsing()
 
 static int zoe_m8q_process_rx_buffer() 
 {
-    // printk("process_rx_buffer()\n\n");
 
-    //Find beginning of NMEA string
-    uint8_t* nmea_begin_ptr = strchr(rx_buff, '$');
-    
-    if(nmea_begin_ptr == NULL) {
-        // printk("Buffer does not contain a NMEA string\n");
-        return 0;
-    }
+    uint8_t* nmea_begin_ptr = rx_buff;
 
     while (true) {
-
         uint8_t temp_buff[BUFF_LEN]; 
 
-        //Find the beginning of the next NMEA string
-        uint8_t* nmea_end_ptr = strchr(nmea_begin_ptr, 13);
-
-        //Check for incomplete NMEA string
-        if (nmea_end_ptr == NULL) {
-
-            // printk("[ZOE_M8Q] Null found\n");
-            int left_in_buffer = (&(rx_buff[BUFF_LEN]) - nmea_begin_ptr);
-
-            //Copy incomplete NMEA string to beginning of rx_buff
-            strncpy(rx_buff, nmea_begin_ptr, left_in_buffer);
-
-            //Clear the rest of the buffer
-            for (int i=left_in_buffer; i<BUFF_LEN; i++) {
-                rx_buff[i] = 0;
-            }
-
-            buffer_used_it = left_in_buffer;
-            
-            printk("incomplete nmea string\n");
+        //Find beginning of NMEA string
+        nmea_begin_ptr = strchr(nmea_begin_ptr, '$');
+        
+        if (nmea_begin_ptr == NULL) {
+            // printk("[ZOE_M8Q] Buffer does not contain a NMEA string\n\n");
+            buffer_used_it = 0;
             return 0;
         }
 
-        nmea_end_ptr[0] = 0;
-        nmea_end_ptr[1] = 0;
-        
-        // for(int i = 0; i<6; i++) {
-        //     printk("end[%d]: %d\n", i, nmea_end_ptr[i]);
-        // }
+        //Find the end the next NMEA string
+        uint8_t* nmea_end_ptr = strchr(nmea_begin_ptr, '\r');
+        uint8_t* nmea_empty_ptr = strchr(nmea_begin_ptr, 0xff);
 
-        uint32_t sentence_length = nmea_end_ptr-nmea_begin_ptr;
+        // Beginning of NMEA string has been found
+        // Check for end of NMEA string
+        if (NULL != nmea_end_ptr) {
+            uint32_t sentence_length = nmea_end_ptr-nmea_begin_ptr;
 
-        //Copy NMEA string to temp_buffer
-        strncpy(temp_buff, nmea_begin_ptr, sentence_length);
-        temp_buff[sentence_length] = 0;
+            //Copy NMEA string to temp_buffer
+            strncpy(temp_buff, nmea_begin_ptr, sentence_length);
+            temp_buff[sentence_length] = 0;
+            zoe_m8q_process_nmea_string(temp_buff);
 
-        zoe_m8q_process_nmea_string(temp_buff);
-        nmea_begin_ptr = (nmea_end_ptr + 2);
+            nmea_begin_ptr++;
+
+        // Incomplete NMEA string at the end of buffer
+        } else if ((NULL == nmea_end_ptr) && (NULL == nmea_empty_ptr)){  
+
+            uint8_t* nmea_empty_ptr = strchr(nmea_begin_ptr, 0xff);
+
+            // printk("[ZOE_M8Q] Null found\n");
+            int partial_str_len = (&(rx_buff[BUFF_LEN]) - nmea_begin_ptr);
+
+            //Copy incomplete NMEA string to beginning of rx_buff
+            strncpy(rx_buff, nmea_begin_ptr, partial_str_len);
+
+            //Clear the rest of the buffer
+            for (int i=partial_str_len; i<BUFF_LEN; i++) {
+                rx_buff[i] = 0;
+            }
+
+            buffer_used_it = partial_str_len;
+            
+            return 0;
+
+        // ERROR empty bytes before NMEA string terminator
+        } else {
+            printk("[ZOE_M8Q] Empty bytes before NMEA string terminator!\n");
+            buffer_used_it = 0;
+            return 0;
+        }
     }
-
     return 0;
 }
 
@@ -240,13 +246,17 @@ static int zoe_m8q_sample_fetch(const struct device *dev,
             .count = 1
         };
 
+        // printk("Before transcieve buffer_used: %d\n", buffer_used_it);
+        // printk("Before tranceive rx buff:\n[%s]\n\n", rx_buff);
+
         //Get data from SPI
         return_value = spi_transceive(data->spi, &data->spi_cfg, NULL, &rx);
+
+        // printk("After tranceive rx buff:\n[%s]\n\n", rx_buff);
 
         if (return_value != 0) {
             printk("[ZOE_M8Q:ERR] SPI transceive error: 0x%02x\n", return_value);
         } else {
-            printk("Buffer: [%s]\n", rx_buff);
             return_value = zoe_m8q_process_rx_buffer();
         }
     }
@@ -259,8 +269,6 @@ static int zoe_m8q_channel_get(const struct device *dev,
 {
 
     struct zoe_m8q_data *data = dev->data;
-
-
 
     switch (chan) {
         case SENSOR_CHAN_GPS_DATA_VALID:
@@ -276,7 +284,6 @@ static int zoe_m8q_channel_get(const struct device *dev,
             break;
 
         case SENSOR_CHAN_GPS_LATITUDE:
-            // printk("In lat\n"); 
             if('N' == data->gxrmc.lat_dir) {
                 val->val1 = data->gxrmc.lat_high;
                 val->val2 = data->gxrmc.lat_low;
@@ -285,14 +292,9 @@ static int zoe_m8q_channel_get(const struct device *dev,
                 val->val1 = -1 * data->gxrmc.lat_high;
                 val->val2 = -1 * data->gxrmc.lat_low;
             }
-
-            // printk("lat val1: %d\n", val->val1);
-            // printk("lat val2: %d\n\n", val->val2);
-
             break;
 
         case SENSOR_CHAN_GPS_LONGITUDE:
-            // printk("In lon\n"); 
             if('E' == data->gxrmc.lon_dir) {
                 val->val1 = data->gxrmc.lon_high;
                 val->val2 = data->gxrmc.lon_low;
@@ -301,10 +303,6 @@ static int zoe_m8q_channel_get(const struct device *dev,
                 val->val1 = -1 * data->gxrmc.lon_high;
                 val->val2 = -1 * data->gxrmc.lon_low;
             }
-
-            // printk("lon val1: %d\n", val->val1);
-            // printk("lon val2: %d\n\n", val->val2);
-
             break;
 
         case SENSOR_CHAN_GPS_ALTITUDE:
@@ -321,11 +319,6 @@ static int zoe_m8q_channel_get(const struct device *dev,
         default:
             return -ENOTSUP;
     }
-
-    // printk("lat_high: %d\n", data->gxrmc.lat_high);
-    // printk("lat_low: %d\n", data->gxrmc.lat_low);
-    // printk("lon_high: %d\n", data->gxrmc.lon_high);
-    // printk("lon_low: %d\n\n", data->gxrmc.lon_low);
 
 	return 0;
 }

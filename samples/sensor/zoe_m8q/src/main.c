@@ -32,14 +32,13 @@ void print_gps_data()
     printk("Latitude:\t%d.%d DD:MM.MMMM\n", latitude.val1, latitude.val2);
     printk("Longitude:\t%d.%d DDD:MM.MMMM\n", longitude.val1, longitude.val2);
     printk("Altitude:\t%d xxxx => xxx.x m\n", altitude.val1);
-    printk("Groundspeed:\t%d xxxxxx => xxx.xxx knots\n", groundspeed.val1);
+    printk("Groundspeed:\t%06d xxxxxx => xxx.xxx knots\n", groundspeed.val1);
     printk("True Course:\t%d\n", true_course.val1);
     printk("\n");
 }
 
 void main(void)
 {
-
     const char *const label = DT_LABEL(DT_INST(0, u_blox_zoe_m8q));
     const struct device *gps = device_get_binding(label);
 
