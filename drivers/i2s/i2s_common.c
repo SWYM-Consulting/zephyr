@@ -44,6 +44,7 @@ int z_impl_i2s_buf_write(const struct device *dev, void *buf, size_t size)
 
 	ret = k_mem_slab_alloc(tx_cfg->mem_slab, &mem_block, K_FOREVER);
 	if (ret < 0) {
+		
 		return -ENOMEM;
 	}
 

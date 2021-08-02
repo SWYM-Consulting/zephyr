@@ -10,7 +10,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#include <audio/codec.h>
 /* Register addresses */
 #define PAGE_CONTROL_ADDR	0
 
@@ -99,7 +99,10 @@ extern "C" {
 #define OUTPUT_ROUTING_ADDR	(struct reg_addr){1, 35}
 #define OUTPUT_ROUTING_HPL	(2 << 6)
 #define OUTPUT_ROUTING_HPR	(2 << 2)
-
+#define OUTPUT_ROUTING_SPL  (1 << 2)
+#define OUTPUT_ROUTING_SPR  (1 << 6)
+#define OUTPUT_ROUTING_MIC_SPR (1 << 1)
+#define OUTPUT_ROUTING_MIC_SPL (1 << 5)
 #define HPL_ANA_VOL_CTRL_ADDR	(struct reg_addr){1, 36}
 #define HPR_ANA_VOL_CTRL_ADDR	(struct reg_addr){1, 37}
 #define HPX_ANA_VOL_ENABLE	(BIT(7))
@@ -112,6 +115,14 @@ extern "C" {
 #define HPX_ANA_VOL_MUTE	(HPX_ANA_VOL_MIN | ~HPX_ANA_VOL_ENABLE)
 #define HPX_ANA_VOL_LOW_THRESH	(105)
 #define HPX_ANA_VOL_FLOOR	(144)
+
+#define SPL_ANA_VOL_CTRL_ADDR (struct reg_addr){1, 38}
+#define SPR_ANA_VOL_CTRL_ADDR (struct reg_addr){1, 39}
+#define SPX_ANA_VOL_ENABLE	(BIT(7))
+#define SPX_ANA_VOL_MASK	(BIT_MASK(7))
+#define SPX_ANA_VOL(val)	(((val) & SPX_ANA_VOL_MASK) |	\
+		SPX_ANA_VOL_ENABLE)
+#define SPX_ANA_VOL_DEFAULT	(64)
 
 #define HPL_DRV_GAIN_CTRL_ADDR	(struct reg_addr){1, 40}
 #define HPR_DRV_GAIN_CTRL_ADDR	(struct reg_addr){1, 41}
@@ -126,6 +137,19 @@ extern "C" {
 #define TIMER_MCLK_DIV_MASK	(BIT_MASK(7))
 #define TIMER_MCLK_DIV_VAL(val)	((val) & TIMER_MCLK_DIV_MASK)
 
+
+	#define SPX_AMP_ADDR (struct reg_addr){1, 0x20}
+	#define SPX_AMP_OUT_EN BIT(7) | BIT(6)
+	
+	#define SPL_DRV_CTRL_ADDR (struct reg_addr){1,42}
+	#define SPR_DRV_CTRL_ADDR (struct reg_addr){1,43}
+
+	#define SPX_DRV_CTRL_FULL_UNMUTE (2 << 3) | BIT(2)
+	
+	#define SPL_ANA_VOL_ADDR (struct reg_addr){1,38}
+	#define SPR_ANA_VOL_ADDR (struct reg_addr){1,39}
+
+	#define SPX_ANA_VOL_FULL BIT(7) | 30
 struct reg_addr {
 	uint8_t page; 		/* page number */
 	uint8_t reg_addr; 		/* register address */

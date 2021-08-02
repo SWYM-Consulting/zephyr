@@ -14,7 +14,6 @@
 #include <drivers/i2c.h>
 #include <drivers/gpio.h>
 
-#include <audio/codec.h>
 #include "tlv320dac310x.h"
 
 #define LOG_LEVEL CONFIG_AUDIO_CODEC_LOG_LEVEL
@@ -162,12 +161,47 @@ static void codec_unmute_output(const struct device *dev)
 	codec_write_reg(dev, VOL_CTRL_ADDR, VOL_CTRL_UNMUTE_DEFAULT);
 }
 
+static int codec_set_playback(const struct device * dev)
+{
+	LOG_DBG("Setting Codec to Playback");
+	return 0;
+}
+
+static int codec_set_record(const struct device * dev)
+{
+	LOG_DBG("Setting Codec to Record");
+	return 0;
+}
+
+static int codec_set_passthrough(const struct device * dev)
+{
+	LOG_DBG("Setting Codec to Passthrough");
+	uint8_t val = OUTPUT_ROUTING_MIC_SPL | OUTPUT_ROUTING_MIC_SPR;
+	codec_write_reg(dev, OUTPUT_ROUTING_ADDR, val);
+	return 0;
+}
 static int codec_set_property(const struct device *dev,
 			      audio_property_t property,
 			      audio_channel_t channel,
 			      audio_property_value_t val)
 {
 	/* individual channel control not currently supported */
+	if(channel == AUDIO_CHANNEL_PLAYBACK)
+	{
+		return codec_set_playback(dev);
+	}
+	if(channel == AUDIO_CHANNEL_RECORD)
+	{
+		#define OUTPUT_ROUTING_AIN2_SPL BIT(4)
+		uint8_t val = OUTPUT_ROUTING_MIC_SPL | OUTPUT_ROUTING_AIN2_SPL;
+		codec_write_reg(dev, OUTPUT_ROUTING_ADDR, val);
+		return codec_set_record(dev);
+	}
+
+	if(channel == AUDIO_CHANNEL_PASSTHROUGH)
+	{
+		return codec_set_passthrough(dev);
+	}
 	if (channel != AUDIO_CHANNEL_ALL) {
 		LOG_ERR("channel %u invalid. must be AUDIO_CHANNEL_ALL",
 			channel);
@@ -233,8 +267,9 @@ static void codec_read_reg(const struct device *dev, struct reg_addr reg,
 
 	i2c_reg_read_byte(dev_cfg->i2c_device,
 			dev_cfg->i2c_address, reg.reg_addr, val);
-	LOG_DBG("RD PG:%u REG:%02u VAL:0x%02x",
-			reg.page, reg.reg_addr, *val);
+	LOG_DBG("RD PG:%u REG:%02u[0x%02X] VAL:0x%02x",
+			reg.page, reg.reg_addr,reg.reg_addr, *val);
+	k_sleep(K_MSEC(10));
 }
 
 static void codec_soft_reset(const struct device *dev)
@@ -326,16 +361,18 @@ static int codec_configure_clocks(const struct device *dev,
 		mdac = dac_clk / mod_clk;
 
 		/* check if mdac is an integer */
+	
 		if ((mdac * mod_clk) == dac_clk) {
 			/* found suitable dividers */
 			break;
 		}
 		osr -= osr_multiple;
+		
 	}
 
 	/* check if suitable value was found */
 	if (osr < osr_min) {
-		LOG_ERR("Unable to find suitable mdac and osr values");
+		LOG_ERR("Unable to find suitable mdac and osr values %d/%d [%d]",osr,osr_min,osr_max);
 		return -EINVAL;
 	}
 
@@ -419,15 +456,42 @@ static enum osr_multiple codec_get_osr_multiple(audio_dai_cfg_t *cfg)
 			osr);
 	return osr;
 }
+static void codec_config_speaker_out(const struct device * dev)
+{
 
+
+	uint8_t val;
+	codec_write_reg(dev,SPX_AMP_ADDR,SPX_AMP_OUT_EN);
+
+
+	val = OUTPUT_ROUTING_MIC_SPL | OUTPUT_ROUTING_MIC_SPR;
+	codec_write_reg(dev, OUTPUT_ROUTING_ADDR, val);
+
+	/* enable volume control on Speaker out */
+	codec_write_reg(dev, SPL_ANA_VOL_CTRL_ADDR,
+			SPX_ANA_VOL(SPX_ANA_VOL_DEFAULT));
+	codec_write_reg(dev, SPR_ANA_VOL_CTRL_ADDR,
+			SPX_ANA_VOL(SPX_ANA_VOL_DEFAULT));
+
+	codec_write_reg(dev,SPL_DRV_CTRL_ADDR,SPX_DRV_CTRL_FULL_UNMUTE);
+	codec_write_reg(dev,SPR_DRV_CTRL_ADDR,SPX_DRV_CTRL_FULL_UNMUTE);
+
+	codec_write_reg(dev,SPL_ANA_VOL_ADDR,SPX_ANA_VOL_FULL);
+	codec_write_reg(dev,SPR_ANA_VOL_ADDR,SPX_ANA_VOL_FULL);
+	
+
+}
 static void codec_configure_output(const struct device *dev)
 {
 	uint8_t val;
 
+	codec_config_speaker_out(dev);
 	/*
 	 * set common mode voltage to 1.65V (half of AVDD)
 	 * AVDD is typically 3.3V
 	 */
+
+
 	codec_read_reg(dev, HEADPHONE_DRV_ADDR, &val);
 	val &= ~HEADPHONE_DRV_CM_MASK;
 	val |= HEADPHONE_DRV_CM(CM_VOLTAGE_1P65) | HEADPHONE_DRV_RESERVED;
@@ -437,10 +501,11 @@ static void codec_configure_output(const struct device *dev)
 	codec_read_reg(dev, HP_OUT_POP_RM_ADDR, &val);
 	codec_write_reg(dev, HP_OUT_POP_RM_ADDR, val | HP_OUT_POP_RM_ENABLE);
 
+	
 	/* route DAC output to Headphone */
-	val = OUTPUT_ROUTING_HPL | OUTPUT_ROUTING_HPR;
-	codec_write_reg(dev, OUTPUT_ROUTING_ADDR, val);
-
+	// val = OUTPUT_ROUTING_HPL | OUTPUT_ROUTING_HPR;
+	// codec_write_reg(dev, OUTPUT_ROUTING_ADDR, val);
+	
 	/* enable volume control on Headphone out */
 	codec_write_reg(dev, HPL_ANA_VOL_CTRL_ADDR,
 			HPX_ANA_VOL(HPX_ANA_VOL_DEFAULT));

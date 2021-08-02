@@ -1,0 +1,5 @@
+menuconfig TLV320
+	bool "TLV320 Codec"
+	depends on I2C
+	help
+	  Enable driver for TLV320 Codec

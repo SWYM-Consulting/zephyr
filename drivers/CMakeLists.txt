@@ -8,6 +8,7 @@ add_subdirectory(misc)
 add_subdirectory(pcie)
 add_subdirectory(disk)
 
+add_subdirectory_ifdef(CONFIG_SOUND sound)
 add_subdirectory_ifdef(CONFIG_ADC adc)
 add_subdirectory_ifdef(CONFIG_CLOCK_CONTROL clock_control)
 add_subdirectory_ifdef(CONFIG_COUNTER counter)

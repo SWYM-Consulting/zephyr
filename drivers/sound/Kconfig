@@ -1,0 +1,10 @@
+
+menuconfig SOUND
+	bool "Sound Drivers"
+	help
+	  Include sound drivers in system config
+
+if sound
+source "drivers/sound/tlv320/Kconfig"
+
+endif
