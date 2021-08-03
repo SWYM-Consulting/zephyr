@@ -334,6 +334,12 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Lpspi1, &rootCfg);
 #endif
 
+#ifdef CONFIG_COUNTER_MCUX_GPT
+	rootCfg.mux = kCLOCK_GPT1_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
+	CLOCK_SetRootClock(kCLOCK_Root_Gpt1, &rootCfg);
+#endif
+
 	/* Keep core clock ungated during WFI */
 	CCM->GPR_PRIVATE1_SET = 0x1;
 	/* Keep the system clock running so SYSTICK can wake up the system from
@@ -343,6 +349,13 @@ static ALWAYS_INLINE void clock_init(void)
 	GPC_CM_SetNextCpuMode(GPC_CPU_MODE_CTRL_1, kGPC_RunMode);
 	GPC_CM_EnableCpuSleepHold(GPC_CPU_MODE_CTRL_0, false);
 	GPC_CM_EnableCpuSleepHold(GPC_CPU_MODE_CTRL_1, false);
+
+#ifdef CONFIG_SEGGER_RTT_SECTION_DTCM
+	/* Enable the AHB clock while the CM7 is sleeping to allow debug access
+	 * to TCM
+	 */
+	IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_CM7_FORCE_HCLK_EN_MASK;
+#endif
 }
 
 /**

@@ -106,6 +106,16 @@ config BT_BROADCASTER
 
 endmenu
 
+config BT_LIM_ADV_TIMEOUT
+	int "Timeout for limited advertising in 1s units"
+	default 30
+	range 1 180
+	help
+	  After this timeout is reached, advertisement with BT_LE_AD_LIMITED flag
+	  set shall be terminated. As per BT Core Spec 5.2, Vol 3, Part C,
+	  Appendix A (NORMATIVE): TIMERS AND CONSTANTS it's required to be no more
+	  than 180s.
+
 config BT_EXT_ADV
 	bool "Extended Advertising and Scanning support [EXPERIMENTAL]"
 	help
@@ -172,7 +182,7 @@ config BT_OBSERVER
 
 endmenu
 
-source "subsys/bluetooth/services/Kconfig"
+rsource "services/Kconfig"
 
 config BT_CONN
 	bool
@@ -309,10 +319,10 @@ config BT_ISO_MAX_BIG
 endif # BT_ISO_BROADCAST
 endif # BT_ISO
 
-source "subsys/bluetooth/common/Kconfig"
-source "subsys/bluetooth/host/Kconfig"
-source "subsys/bluetooth/controller/Kconfig"
-source "subsys/bluetooth/shell/Kconfig"
+rsource "common/Kconfig"
+rsource "host/Kconfig"
+rsource "controller/Kconfig"
+rsource "shell/Kconfig"
 
 endif # BT_HCI
 
@@ -329,7 +339,7 @@ config BT_COMPANY_ID
 	  Company Identifiers can be found here:
 	  https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
 
-source "subsys/bluetooth/mesh/Kconfig"
-source "subsys/bluetooth/audio/Kconfig"
+rsource "mesh/Kconfig"
+rsource "audio/Kconfig"
 
 endif # BT

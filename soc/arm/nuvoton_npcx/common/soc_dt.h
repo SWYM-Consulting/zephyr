@@ -23,7 +23,7 @@
  */
 #define NPCX_DT_PROP_ENUM_OR(node_id, prop, default_value) \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
-		    (DT_ENUM_UPPER_TOKEN(node_id, prop)), (default_value))
+		    (DT_STRING_UPPER_TOKEN(node_id, prop)), (default_value))
 
 /**
  * @brief Like DT_INST_PROP_OR(), but expand parameters with
@@ -704,5 +704,15 @@
  */
 #define NPCX_DT_PSL_OUT_PIN(inst) DT_PROP(DT_INST(inst, nuvoton_npcx_psl_out), \
 							pin)
+
+/**
+ * @brief Check if the host interface type is automatically configured by
+ * booter.
+ *
+ * @return TRUE - if the host interface is configured by booter,
+ *         FALSE - otherwise.
+ */
+#define NPCX_BOOTER_IS_HIF_TYPE_SET() \
+	DT_PROP(DT_PATH(booter_variant), hif_type_auto)
 
 #endif /* _NUVOTON_NPCX_SOC_DT_H_ */

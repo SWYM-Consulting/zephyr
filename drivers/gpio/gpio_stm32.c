@@ -114,7 +114,7 @@ static inline uint32_t stm32_pinval_get(int pin)
 /**
  * @brief Configure the hardware.
  */
-int gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf)
+void gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
@@ -221,7 +221,6 @@ int gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf)
 	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
 #endif  /* CONFIG_SOC_SERIES_STM32F1X */
 
-	return 0;
 }
 
 /**
@@ -289,7 +288,8 @@ static void gpio_stm32_set_exti_source(int port, int pin)
 #elif CONFIG_SOC_SERIES_STM32MP1X
 	LL_EXTI_SetEXTISource(port, line);
 #elif defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X)
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
 	LL_EXTI_SetEXTISource(port, line);
 #else
 	LL_SYSCFG_SetEXTISource(port, line);
@@ -307,7 +307,8 @@ static int gpio_stm32_get_exti_source(int pin)
 #elif CONFIG_SOC_SERIES_STM32MP1X
 	port = LL_EXTI_GetEXTISource(line);
 #elif defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X)
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
 	port = LL_EXTI_GetEXTISource(line);
 #else
 	port = LL_SYSCFG_GetEXTISource(line);
@@ -581,7 +582,7 @@ static uint32_t gpio_stm32_get_power_state(const struct device *dev)
 }
 
 static int gpio_stm32_set_power_state(const struct device *dev,
-					      uint32_t new_state)
+					      enum pm_device_state new_state)
 {
 	struct gpio_stm32_data *data = dev->data;
 	int ret = 0;
@@ -605,7 +606,7 @@ static int gpio_stm32_set_power_state(const struct device *dev,
 
 static int gpio_stm32_pm_device_ctrl(const struct device *dev,
 				     uint32_t ctrl_command,
-				     uint32_t *state, pm_device_cb cb, void *arg)
+				     enum pm_device_state *state)
 {
 	struct gpio_stm32_data *data = dev->data;
 	uint32_t new_state;
@@ -624,10 +625,6 @@ static int gpio_stm32_pm_device_ctrl(const struct device *dev,
 	default:
 		ret = -EINVAL;
 
-	}
-
-	if (cb) {
-		cb(dev, ret, state, arg);
 	}
 
 	return ret;
@@ -687,7 +684,7 @@ static int gpio_stm32_init(const struct device *dev)
 			    gpio_stm32_pm_device_ctrl,			       \
 			    &gpio_stm32_data_## __suffix,		       \
 			    &gpio_stm32_cfg_## __suffix,		       \
-			    POST_KERNEL,				       \
+			    PRE_KERNEL_1,				       \
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
 			    &gpio_stm32_driver)
 

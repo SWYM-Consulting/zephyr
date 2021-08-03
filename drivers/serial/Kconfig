@@ -79,6 +79,8 @@ config UART_DRV_CMD
 
 comment "Serial Drivers"
 
+source "drivers/serial/Kconfig.b91"
+
 source "drivers/serial/Kconfig.ns16550"
 
 source "drivers/serial/Kconfig.mcux"
@@ -119,6 +121,8 @@ source "drivers/serial/Kconfig.sifive"
 
 source "drivers/serial/Kconfig.esp32"
 
+source "drivers/serial/Kconfig.esp32c3_rom"
+
 source "drivers/serial/Kconfig.gecko"
 
 source "drivers/serial/Kconfig.leuart_gecko"
@@ -150,5 +154,7 @@ source "drivers/serial/Kconfig.npcx"
 source "drivers/serial/Kconfig.apbuart"
 
 source "drivers/serial/Kconfig.rcar"
+
+source "drivers/serial/Kconfig.test"
 
 endif # SERIAL

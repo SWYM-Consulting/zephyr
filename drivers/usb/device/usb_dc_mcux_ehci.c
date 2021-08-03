@@ -78,8 +78,8 @@ static usb_device_struct_t dev_data;
 #if ((defined(USB_DEVICE_CONFIG_EHCI)) && (USB_DEVICE_CONFIG_EHCI > 0U))
 /* EHCI device driver interface */
 static const usb_device_controller_interface_struct_t ehci_iface = {
-								    USB_DeviceEhciInit, USB_DeviceEhciDeinit, USB_DeviceEhciSend,
-								    USB_DeviceEhciRecv, USB_DeviceEhciCancel, USB_DeviceEhciControl
+	USB_DeviceEhciInit, USB_DeviceEhciDeinit, USB_DeviceEhciSend,
+	USB_DeviceEhciRecv, USB_DeviceEhciCancel, USB_DeviceEhciControl
 };
 #endif
 
@@ -211,9 +211,9 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		block->data = NULL;
 	}
 
-	block->data = k_heap_alloc(&ep_buf_pool, cfg->ep_mps, K_MSEC(10));
+	block->data = k_heap_alloc(&ep_buf_pool, cfg->ep_mps, K_NO_WAIT);
 	if (block->data == NULL) {
-		LOG_ERR("Memory allocation time-out");
+		LOG_ERR("Failed to allocate memory");
 		return -ENOMEM;
 	}
 
@@ -462,8 +462,7 @@ static void update_control_stage(usb_device_callback_message_struct_t *cb_msg,
 	if (cb_msg->isSetup) {
 		if (usbd_setup->wLength == 0) {
 			dev_data.setupDataStage = SETUP_DATA_STAGE_DONE;
-		} else if (REQTYPE_GET_DIR(usbd_setup->bmRequestType)
-			   == REQTYPE_DIR_TO_HOST) {
+		} else if (usb_reqtype_is_to_host(usbd_setup)) {
 			dev_data.setupDataStage = SETUP_DATA_STAGE_IN;
 		} else {
 			dev_data.setupDataStage = SETUP_DATA_STAGE_OUT;

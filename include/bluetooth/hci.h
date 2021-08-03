@@ -608,6 +608,7 @@ struct bt_hci_rp_configure_data_path {
 #define BT_HCI_VERSION_5_0                      9
 #define BT_HCI_VERSION_5_1                      10
 #define BT_HCI_VERSION_5_2                      11
+#define BT_HCI_VERSION_5_3                      12
 
 #define BT_HCI_OP_READ_LOCAL_VERSION_INFO       BT_OP(BT_OGF_INFO, 0x0001)
 struct bt_hci_rp_read_local_version_info {
@@ -1257,6 +1258,8 @@ struct bt_hci_cp_le_set_adv_set_random_addr {
 
 #define BT_HCI_LE_ADV_HANDLE_MAX       0xEF
 
+#define BT_HCI_LE_EXT_ADV_SID_INVALID  0xFF
+
 #define BT_HCI_OP_LE_SET_EXT_ADV_PARAM          BT_OP(BT_OGF_LE, 0x0036)
 struct bt_hci_cp_le_set_ext_adv_param {
 	uint8_t      handle;
@@ -1500,6 +1503,7 @@ struct bt_hci_cp_le_set_privacy_mode {
 #define BT_HCI_LE_AOA_CTE                      0x0
 #define BT_HCI_LE_AOD_CTE_1US                  0x1
 #define BT_HCI_LE_AOD_CTE_2US                  0x2
+#define BT_HCI_LE_NO_CTE                       0xFF
 
 #define BT_HCI_LE_CTE_COUNT_MIN                0x1
 #define BT_HCI_LE_CTE_COUNT_MAX                0x10

@@ -27,6 +27,12 @@ interface and listing all issues with the `bug label
 API Changes
 ***********
 
+Deprecated in this release
+
+* :c:macro:`DT_ENUM_TOKEN` and :c:macro:`DT_ENUM_UPPER_TOKEN`,
+  were deprecated in favor of utilizing
+  :c:macro:`DT_STRING_TOKEN` and :c:macro:`DT_STRING_UPPER_TOKEN`
+
 Changes in this release
 
 ==========================
@@ -76,6 +82,8 @@ Bluetooth
 * Host
 
 * Mesh
+
+  * Added return value for opcode callback
 
 * Bluetooth LE split software Controller
 
@@ -283,6 +291,15 @@ Libraries / Subsystems
 
 * Power management
 
+  * The APIs to set/clear/check if devices are busy from a power management
+    perspective have been moved to the PM subsystem. Their naming and signature
+    has also been adjusted to follow common conventions. Below you can find the
+    equivalence list.
+
+    * ``device_busy_set`` -> ``pm_device_busy_set``
+    * ``device_busy_clear`` -> ``pm_device_busy_clear``
+    * ``device_busy_check`` -> ``pm_device_is_busy``
+    * ``device_any_busy_check`` -> ``pm_device_is_any_busy``
 
 * Logging
 

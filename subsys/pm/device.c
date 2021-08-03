@@ -10,7 +10,6 @@
 #include <device.h>
 #include <pm/policy.h>
 
-#if defined(CONFIG_PM)
 #define LOG_LEVEL CONFIG_PM_LOG_LEVEL /* From power module Kconfig */
 #include <logging/log.h>
 LOG_MODULE_DECLARE(power);
@@ -18,17 +17,18 @@ LOG_MODULE_DECLARE(power);
 extern const struct device __device_start[];
 extern const struct device __device_end[];
 
+#if defined(CONFIG_PM)
 extern const struct device *__pm_device_slots_start[];
 
 /* Number of devices successfully suspended. */
 static size_t num_susp;
 
-static bool should_suspend(const struct device *dev, uint32_t state)
+static bool should_suspend(const struct device *dev, enum pm_device_state state)
 {
 	int rc;
-	uint32_t current_state;
+	enum pm_device_state current_state;
 
-	if (device_busy_check(dev) != 0) {
+	if (pm_device_is_busy(dev) != 0) {
 		return false;
 	}
 
@@ -66,7 +66,7 @@ static int _pm_devices(uint32_t state)
 			 * Don't bother the device if it is currently
 			 * in the right state.
 			 */
-			rc = pm_device_state_set(dev, state, NULL, NULL);
+			rc = pm_device_state_set(dev, state);
 			if ((rc != -ENOSYS) && (rc != 0)) {
 				LOG_DBG("%s did not enter %s state: %d",
 					dev->name, pm_device_state_str(state),
@@ -103,15 +103,14 @@ void pm_resume_devices(void)
 
 	for (i = 0; i < num_susp; i++) {
 		pm_device_state_set(__pm_device_slots_start[i],
-				       PM_DEVICE_STATE_ACTIVE,
-				       NULL, NULL);
+				    PM_DEVICE_STATE_ACTIVE);
 	}
 
 	num_susp = 0;
 }
 #endif /* defined(CONFIG_PM) */
 
-const char *pm_device_state_str(uint32_t state)
+const char *pm_device_state_str(enum pm_device_state state)
 {
 	switch (state) {
 	case PM_DEVICE_STATE_ACTIVE:
@@ -129,23 +128,53 @@ const char *pm_device_state_str(uint32_t state)
 	}
 }
 
-int pm_device_state_set(const struct device *dev, uint32_t device_power_state,
-			pm_device_cb cb, void *arg)
+int pm_device_state_set(const struct device *dev,
+			enum pm_device_state device_power_state)
 {
 	if (dev->pm_control == NULL) {
 		return -ENOSYS;
 	}
 
 	return dev->pm_control(dev, PM_DEVICE_STATE_SET,
-			       &device_power_state, cb, arg);
+			       &device_power_state);
 }
 
-int pm_device_state_get(const struct device *dev, uint32_t *device_power_state)
+int pm_device_state_get(const struct device *dev,
+			enum pm_device_state *device_power_state)
 {
 	if (dev->pm_control == NULL) {
 		return -ENOSYS;
 	}
 
 	return dev->pm_control(dev, PM_DEVICE_STATE_GET,
-			       device_power_state, NULL, NULL);
+			       device_power_state);
+}
+
+bool pm_device_is_any_busy(void)
+{
+	const struct device *dev = __device_start;
+
+	while (dev < __device_end) {
+		if (atomic_test_bit(dev->pm->flags, PM_DEVICE_FLAG_BUSY)) {
+			return true;
+		}
+		++dev;
+	}
+
+	return false;
+}
+
+bool pm_device_is_busy(const struct device *dev)
+{
+	return atomic_test_bit(dev->pm->flags, PM_DEVICE_FLAG_BUSY);
+}
+
+void pm_device_busy_set(const struct device *dev)
+{
+	atomic_set_bit(dev->pm->flags, PM_DEVICE_FLAG_BUSY);
+}
+
+void pm_device_busy_clear(const struct device *dev)
+{
+	atomic_clear_bit(dev->pm->flags, PM_DEVICE_FLAG_BUSY);
 }

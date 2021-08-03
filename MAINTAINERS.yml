@@ -401,7 +401,6 @@ Documentation:
     collaborators:
         - nashif
         - utzig
-        - jocelyn-li
         - mbolivar-nordic
     files:
         - doc/*
@@ -1219,7 +1218,6 @@ Twister:
         - nashif
     collaborators:
         - chen-png
-        - jocelyn-li
         - galak
         - PerMac
         - enjiamai
@@ -1427,12 +1425,18 @@ Espressif Platforms:
     status: maintained
     maintainers:
         - sylvioalves
+        - glaubermaroto
+        - ulipe
     files:
         - drivers/*/*esp32*
-        - boards/xtensa/esp32/
-        - soc/xtensa/esp32/
+        - boards/xtensa/esp32*/
+        - soc/xtensa/esp32*/
+        - boards/riscv/esp32*/
+        - soc/riscv/esp32*/
         - dts/xtensa/espressif/
+        - dts/riscv/espressif/
         - dts/bindings/*/*esp32*
+        - samples/boards/esp32*
     labels:
         - "platform: ESP32"
 

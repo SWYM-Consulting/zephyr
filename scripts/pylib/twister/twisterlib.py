@@ -2059,6 +2059,7 @@ class CMake():
         else:
             self.instance.status = "error"
             self.instance.reason = "Cmake build failure"
+            self.instance.fill_results_by_status()
             logger.error("Cmake build failure: %s for %s" % (self.source_dir, self.platform.name))
             results = {"returncode": p.returncode}
 
@@ -3270,8 +3271,8 @@ class TestSuite(DisablePyTestCollectionMixin):
         for instance in self.discards:
             instance.reason = self.discards[instance]
             # If integration mode is on all skips on integration_platforms are treated as errors.
-            # TODO: add quarantine relief here when PR with quarantine feature gets merged
-            if self.integration and instance.platform.name in instance.testcase.integration_platforms:
+            if self.integration and instance.platform.name in instance.testcase.integration_platforms \
+                and "Quarantine" not in instance.reason:
                 instance.status = "error"
                 instance.reason += " but is one of the integration platforms"
                 instance.fill_results_by_status()
@@ -3735,12 +3736,12 @@ class CoverageTool:
         return t
 
     @staticmethod
-    def retrieve_gcov_data(intput_file):
-        logger.debug("Working on %s" % intput_file)
+    def retrieve_gcov_data(input_file):
+        logger.debug("Working on %s" % input_file)
         extracted_coverage_info = {}
         capture_data = False
         capture_complete = False
-        with open(intput_file, 'r') as fp:
+        with open(input_file, 'r') as fp:
             for line in fp.readlines():
                 if re.search("GCOV_COVERAGE_DUMP_START", line):
                     capture_data = True

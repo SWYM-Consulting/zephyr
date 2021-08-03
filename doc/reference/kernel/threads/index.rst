@@ -89,7 +89,7 @@ In some cases a thread may want to sleep until another thread terminates.
 This can be accomplished with the :c:func:`k_thread_join` API. This
 will block the calling thread until either the timeout expires, the target
 thread self-exits, or the target thread aborts (either due to a
-k_thread_abort() call or triggering a fatal error).
+:c:func:`k_thread_abort` call or triggering a fatal error).
 
 Once a thread has terminated, the kernel guarantees that no use will
 be made of the thread struct.  The memory of such a struct can then be
@@ -485,8 +485,8 @@ The following code illustrates the ways a thread can terminate.
         /* thread terminates at end of entry point function */
     }
 
-If CONFIG_USERSPACE is enabled, aborting a thread will additionally mark the
-thread and stack objects as uninitialized so that they may be re-used.
+If :kconfig:`CONFIG_USERSPACE` is enabled, aborting a thread will additionally
+mark the thread and stack objects as uninitialized so that they may be re-used.
 
 Runtime Statistics
 ******************

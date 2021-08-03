@@ -461,7 +461,7 @@ static inline int gpio_dw_resume_from_suspend_port(const struct device *port)
 */
 static int gpio_dw_device_ctrl(const struct device *port,
 			       uint32_t ctrl_command,
-			       uint32_t *state, pm_device_cb cb, void *arg)
+			       enum pm_device_state *state)
 {
 	int ret = 0;
 
@@ -475,9 +475,6 @@ static int gpio_dw_device_ctrl(const struct device *port,
 		*state = gpio_dw_get_power_state(port);
 	}
 
-	if (cb) {
-		cb(port, ret, state, arg);
-	}
 	return ret;
 }
 

@@ -872,6 +872,8 @@ static void l2cap_chan_tx_process(struct k_work *work)
 		if (sent < 0) {
 			if (sent == -EAGAIN) {
 				ch->tx_buf = buf;
+			} else {
+				net_buf_unref(buf);
 			}
 			break;
 		}
@@ -1222,10 +1224,13 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 				struct net_buf *buf)
 {
 	struct bt_conn *conn = l2cap->chan.chan.conn;
+	struct bt_l2cap_chan *chans[L2CAP_ECRED_CHAN_MAX];
 	struct bt_l2cap_ecred_reconf_req *req;
 	struct bt_l2cap_ecred_reconf_rsp *rsp;
 	uint16_t mtu, mps;
 	uint16_t scid, result = BT_L2CAP_RECONF_SUCCESS;
+	int chan_count = 0;
+	bool mps_reduced;
 
 	if (buf->len < sizeof(*req)) {
 		BT_ERR("Too small ecred reconf req packet size");
@@ -1249,15 +1254,7 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	while (buf->len >= sizeof(scid)) {
 		struct bt_l2cap_chan *chan;
-
 		scid = net_buf_pull_le16(buf);
-
-		BT_DBG("scid 0x%04x", scid);
-
-		if (!scid) {
-			continue;
-		}
-
 		chan = bt_l2cap_le_lookup_tx_cid(conn, scid);
 		if (!chan) {
 			result = BT_L2CAP_RECONF_INVALID_CID;
@@ -1276,8 +1273,26 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 			goto response;
 		}
 
-		BT_L2CAP_LE_CHAN(chan)->tx.mtu = mtu;
-		BT_L2CAP_LE_CHAN(chan)->tx.mps = mps;
+		if (BT_L2CAP_LE_CHAN(chan)->tx.mps > mps) {
+			mps_reduced = true;
+		}
+
+		chans[chan_count] = chan;
+		chan_count++;
+	}
+
+	/* As per BT Core Spec V5.2 Vol. 3, Part A, section 7.11
+	 * The request (...) shall not decrease the MPS of a channel
+	 * if more than one channel is specified.
+	 */
+	if (mps_reduced && chan_count > 1) {
+		result = BT_L2CAP_RECONF_INVALID_MPS;
+		goto response;
+	}
+
+	while (chan_count-- >= 0) {
+		BT_L2CAP_LE_CHAN(chans[chan_count])->tx.mtu = mtu;
+		BT_L2CAP_LE_CHAN(chans[chan_count])->tx.mps = mps;
 	}
 
 	BT_DBG("mtu %u mps %u", mtu, mps);
@@ -2605,8 +2620,8 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 	}
 
 	req = net_buf_add(buf, sizeof(*req));
-	req->dcid = sys_cpu_to_le16(ch->rx.cid);
-	req->scid = sys_cpu_to_le16(ch->tx.cid);
+	req->dcid = sys_cpu_to_le16(ch->tx.cid);
+	req->scid = sys_cpu_to_le16(ch->rx.cid);
 
 	l2cap_chan_send_req(chan, buf, L2CAP_DISC_TIMEOUT);
 	bt_l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECT);

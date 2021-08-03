@@ -150,6 +150,8 @@ struct bt_le_ext_adv {
 	/* TX Power in use by the controller */
 	int8_t                    tx_power;
 #endif /* defined(CONFIG_BT_EXT_ADV) */
+
+	struct k_work_delayable	timeout_work;
 };
 
 enum {
@@ -213,11 +215,11 @@ struct bt_dev_le {
 	struct k_sem		pkts;
 	uint16_t		acl_mtu;
 	struct k_sem		acl_pkts;
+#endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_ISO)
 	uint16_t		iso_mtu;
 	struct k_sem		iso_pkts;
 #endif /* CONFIG_BT_ISO */
-#endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_SMP)
 	/* Size of the the controller resolving list */

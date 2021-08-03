@@ -34,6 +34,7 @@
 #include "lll/lll_adv_types.h"
 #include "lll_adv.h"
 #include "lll/lll_adv_pdu.h"
+#include "lll_chan.h"
 #include "lll_scan.h"
 #include "lll/lll_df_types.h"
 #include "lll_sync.h"
@@ -619,6 +620,10 @@ int ll_init(struct k_sem *sem_rx)
 		ull_filter_reset(true);
 	}
 
+#if defined(CONFIG_BT_CTLR_TEST)
+	lll_chan_sel_2_ut();
+#endif /* CONFIG_BT_CTLR_TEST */
+
 	return  0;
 }
 
@@ -700,7 +705,23 @@ void ll_reset(void)
 		if (!err) {
 			struct ll_scan_set *scan;
 
-			scan = ull_scan_is_enabled_get(0);
+			scan = ull_scan_is_enabled_get(SCAN_HANDLE_1M);
+
+			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
+			    IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+				struct ll_scan_set *scan_other;
+
+				scan_other = ull_scan_is_enabled_get(SCAN_HANDLE_PHY_CODED);
+				if (scan_other) {
+					if (scan) {
+						scan->is_enabled = 0U;
+						scan->lll.conn = NULL;
+					}
+
+					scan = scan_other;
+				}
+			}
+
 			LL_ASSERT(scan);
 
 			scan->is_enabled = 0U;

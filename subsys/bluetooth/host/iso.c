@@ -319,7 +319,11 @@ void bt_iso_connected(struct bt_conn *conn)
 
 	if (bt_iso_setup_data_path(conn)) {
 		BT_ERR("Unable to setup data path");
-		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		if (conn->iso.is_bis && IS_ENABLED(CONFIG_BT_CONN)) {
+			bt_conn_disconnect(conn,
+					   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		}
+		/* TODO: Handle BIG terminate for BIS */
 		return;
 	}
 
@@ -332,7 +336,7 @@ void bt_iso_connected(struct bt_conn *conn)
 	}
 }
 
-static void bt_iso_remove_data_path(struct bt_conn *conn)
+void bt_iso_remove_data_path(struct bt_conn *conn)
 {
 	BT_DBG("%p", conn);
 
@@ -413,8 +417,6 @@ void bt_iso_disconnected(struct bt_conn *conn)
 	if (sys_slist_is_empty(&conn->channels)) {
 		return;
 	}
-
-	bt_iso_remove_data_path(conn);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
 		bt_iso_chan_disconnected(chan, conn->err);

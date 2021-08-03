@@ -124,6 +124,21 @@ int ull_df_reset(void)
 {
 	int err;
 
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	struct ll_adv_set *adv;
+	uint8_t handle;
+
+	/* Get the advertising set instance */
+	for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
+		adv = ull_adv_is_created_get(handle);
+		if (!adv) {
+			continue;
+		}
+
+		adv->df_cfg = NULL;
+	}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
 	err = init_reset();
 	if (err) {
 		return err;
@@ -256,6 +271,8 @@ uint8_t ll_df_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
  */
 uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 {
+	void *extra_data_prev, *extra_data;
+	struct pdu_adv *pdu_prev, *pdu;
 	struct lll_adv_sync *lll_sync;
 	struct lll_df_adv_cfg *df_cfg;
 	struct ll_adv_sync_set *sync;
@@ -295,28 +312,30 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
-		err = ull_adv_sync_pdu_set_clear(adv, 0,
-						 ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
-						 NULL, &ter_idx);
+		err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_NEVER, &pdu_prev,
+					     &pdu, &extra_data_prev, &extra_data, &ter_idx);
 		if (err) {
 			return err;
 		}
 
-		if (sync->is_started) {
-			/* If CTE is disabled when advertising is pending,
-			 * decrease advertising event length
-			 */
-			ull_adv_sync_update(sync, 0, df_cfg->cte_length);
-			/* ToDo decrease number of chain PDUs in pending
-			 * advertising if there are added empty chain PDUs
-			 * to sent requested number of CTEs in a chain
-			 */
+		if (extra_data) {
+			ull_adv_sync_extra_data_set_clear(extra_data_prev,
+							  extra_data, 0,
+							  ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
+							  NULL);
+		}
+
+		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, 0,
+						 ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
+						 NULL);
+		if (err) {
+			return err;
 		}
 
 		df_cfg->is_enabled = 0U;
 	} else {
 		struct pdu_cte_info cte_info;
-		struct adv_pdu_field_data pdu_data;
+		void *hdr_data;
 
 		if (df_cfg->is_enabled) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
@@ -324,27 +343,34 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 
 		cte_info.type = df_cfg->cte_type;
 		cte_info.time = df_cfg->cte_length;
-		pdu_data.field_data = (uint8_t *)&cte_info;
-		pdu_data.extra_data = df_cfg;
-		err = ull_adv_sync_pdu_set_clear(adv,
-						 ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
-						 0, &pdu_data, &ter_idx);
+		hdr_data = (uint8_t *)&cte_info;
+
+		err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_ALWAYS, &pdu_prev,
+					     &pdu, &extra_data_prev, &extra_data, &ter_idx);
 		if (err) {
 			return err;
 		}
 
-		if (sync->is_started) {
-			/* If CTE is enabled when advertising is pending,
-			 * increase advertising event length
-			 */
-			ull_adv_sync_update(sync, df_cfg->cte_length, 0);
-			/* ToDo increase number of chain PDUs in pending
-			 * advertising if requested more CTEs than available
-			 * PDU with advertising data.
-			 */
+		if (extra_data) {
+			ull_adv_sync_extra_data_set_clear(extra_data_prev, extra_data,
+							  ULL_ADV_PDU_HDR_FIELD_CTE_INFO, 0,
+							  df_cfg);
+		}
+
+		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
+						 ULL_ADV_PDU_HDR_FIELD_CTE_INFO, 0, hdr_data);
+		if (err) {
+			return err;
 		}
 
 		df_cfg->is_enabled = 1U;
+	}
+
+	if (sync->is_started) {
+		err = ull_adv_sync_time_update(sync, pdu);
+		if (err) {
+			return err;
+		}
 	}
 
 	lll_adv_sync_data_enqueue(adv->lll.sync, ter_idx);

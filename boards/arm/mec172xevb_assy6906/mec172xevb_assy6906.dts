@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2021, Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <microchip/mec172xnsz.dtsi>
+
+/ {
+	model = "Microchip MEC172XEVB_ASSY6906 evaluation board";
+	compatible = "microchip,mec172xevb_assy6906", "microchip,mec172xnsz";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart1;
+	};
+
+	aliases {
+		led0 = &led4;
+		led1 = &led3;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led4: led_0 {
+			/* GPIO241/CMP_VOUT0/PWM0_ALT on schematic,
+			 * LED4 on silkscreen.
+			 */
+			gpios = <&gpio_240_276 1 GPIO_ACTIVE_HIGH>;
+			label = "LED 4";
+		};
+		led3: led_1 {
+			/* GPIO175/CMP_VOUT1/PWM8_ALT on schematic,
+			 * LED5 on silkscreen.
+			 */
+			gpios = <&gpio_140_176 29 GPIO_ACTIVE_HIGH>;
+			label = "LED 5";
+		};
+	};
+};
+
+&cpu0 {
+	status = "okay";
+};
+
+/* Initialize ECIA. Does not initialize child devices */
+&ecia {
+	status = "okay";
+};
+
+&rtimer {
+	status = "okay";
+};
+
+&pcr {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+};

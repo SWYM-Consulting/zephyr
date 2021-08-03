@@ -278,6 +278,29 @@ typedef int16_t device_handle_t;
 		    (NULL))
 
 /**
+ * @def DEVICE_DT_GET_ONE
+ *
+ * @brief Obtain a pointer to a device object by devicetree compatible
+ *
+ * If any enabled devicetree node has the given compatible and a
+ * device object was created from it, this returns that device.
+ *
+ * If there no such devices, this throws a compilation error.
+ *
+ * If there are multiple, this returns an arbitrary one.
+ *
+ * If this returns non-NULL, the device must be checked for readiness
+ * before use, e.g. with device_is_ready().
+ *
+ * @param compat lowercase-and-underscores devicetree compatible
+ * @return a pointer to a device
+ */
+#define DEVICE_DT_GET_ONE(compat)					    \
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),			    \
+		    (DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(compat))), \
+		    (ZERO_OR_COMPILE_ERROR(0)))
+
+/**
  * @def DEVICE_GET
  *
  * @brief Obtain a pointer to a device object by name
@@ -362,7 +385,7 @@ struct device {
 #ifdef CONFIG_PM_DEVICE
 	/** Power Management function */
 	int (*pm_control)(const struct device *dev, uint32_t command,
-				 uint32_t *state, pm_device_cb cb, void *arg);
+			  enum pm_device_state *state);
 	/** Pointer to device instance power management data */
 	struct pm_device * const pm;
 #endif
@@ -588,52 +611,6 @@ static inline bool device_is_ready(const struct device *dev)
 {
 	return device_usable_check(dev) == 0;
 }
-
-/**
- * @brief Indicate that the device is in the middle of a transaction
- *
- * Called by a device driver to indicate that it is in the middle of a
- * transaction.
- *
- * @param dev Pointer to device structure of the driver instance.
- */
-void device_busy_set(const struct device *dev);
-
-/**
- * @brief Indicate that the device has completed its transaction
- *
- * Called by a device driver to indicate the end of a transaction.
- *
- * @param dev Pointer to device structure of the driver instance.
- */
-void device_busy_clear(const struct device *dev);
-
-#ifdef CONFIG_PM_DEVICE
-/**
- * @brief Check if any device is in the middle of a transaction
- *
- * Called by an application to see if any device is in the middle
- * of a critical transaction that cannot be interrupted.
- *
- * @retval 0 if no device is busy
- * @retval -EBUSY if any device is busy
- */
-int device_any_busy_check(void);
-
-/**
- * @brief Check if a specific device is in the middle of a transaction
- *
- * Called by an application to see if a particular device is in the
- * middle of a critical transaction that cannot be interrupted.
- *
- * @param chk_dev Pointer to device structure of the specific device driver
- * the caller is interested in.
- * @retval 0 if the device is not busy
- * @retval -EBUSY if the device is busy
- */
-int device_busy_check(const struct device *chk_dev);
-
-#endif
 
 /**
  * @}

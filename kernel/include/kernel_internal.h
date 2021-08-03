@@ -136,9 +136,13 @@ z_thread_return_value_set_with_data(struct k_thread *thread,
 	thread->base.swap_data = data;
 }
 
+#ifdef CONFIG_SMP
 extern void z_smp_init(void);
 
+#if CONFIG_MP_NUM_CPUS > 1 && !defined(CONFIG_SMP_BOOT_DELAY)
 extern void smp_timer_init(void);
+#endif
+#endif
 
 extern void z_early_boot_rand_get(uint8_t *buf, size_t length);
 
@@ -152,7 +156,7 @@ extern struct k_thread z_main_thread;
 #ifdef CONFIG_MULTITHREADING
 extern struct k_thread z_idle_threads[CONFIG_MP_NUM_CPUS];
 #endif
-extern K_KERNEL_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+K_KERNEL_PINNED_STACK_ARRAY_EXTERN(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
 				   CONFIG_ISR_STACK_SIZE);
 
 #ifdef CONFIG_GEN_PRIV_STACKS

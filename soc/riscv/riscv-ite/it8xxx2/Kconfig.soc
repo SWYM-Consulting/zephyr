@@ -8,9 +8,18 @@ depends on SOC_SERIES_RISCV32_IT8XXX2
 config SOC_IT8XXX2
 	bool "ITE IT8XXX2 system implementation"
 	select RISCV
-	select ATOMIC_OPERATIONS_C
+	select ATOMIC_OPERATIONS_BUILTIN
 
 endchoice
+
+config SOC_IT8XXX2_PLL_FLASH_48M
+	bool "Flash frequency is 48MHz"
+	default y
+	help
+	  Change frequency of PLL, CPU, and flash to 48MHz during initialization.
+
+	  Set n to use the default settings.
+	  (PLL and CPU run at 48MHz, flash frequency is 16MHz)
 
 choice
 	prompt "Clock source for PLL reference clock"

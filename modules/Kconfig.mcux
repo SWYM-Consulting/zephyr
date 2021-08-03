@@ -148,6 +148,11 @@ config HAS_MCUX_RTC
 	help
 	  Set if the real time clock (RTC) modules is present in the SoC.
 
+config HAS_MCUX_LPC_RTC
+	bool
+	help
+	  Set if the LPC real time clock (RTC) modules is present in the SoC.
+
 config HAS_MCUX_SCG
 	bool
 	help
@@ -201,6 +206,11 @@ config HAS_MCUX_PWM
 	bool
 	help
 	  Set if the PWM  module is present in the SoC.
+
+config HAS_MCUX_SCTIMER
+	bool
+	help
+	  Set if the sctimer module is present in the SoC.
 
 config HAS_MCUX_SMC
 	bool
@@ -266,5 +276,11 @@ config HAS_MCUX_PWT
 	bool
 	help
 	  Set if the PWT module is present on the SoC.
+
+config HAS_MCUX_RCM
+	bool
+	help
+	  Set if the Reset Control Module (RCM) module is present in
+	  the SoC.
 
 endif # HAS_MCUX
